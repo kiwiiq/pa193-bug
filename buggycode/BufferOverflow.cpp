@@ -31,18 +31,28 @@ void demoBufferOverflowData() {
 	printf("\n");
 
 	// Get user name
-	memset(userName, 1, USER_INPUT_MAX_LENGTH);
-	memset(passwd, 2, USER_INPUT_MAX_LENGTH);
+	memset(userName, 0, USER_INPUT_MAX_LENGTH);
+	memset(passwd, 0, USER_INPUT_MAX_LENGTH);
 	printf("login as: ");
 	fflush(stdout);
-	//gets(userName); // use scanf("%s", userName); if gets fails with identifier not found
-	scanf("%s", userName);
+	if (fgets(userName, USER_INPUT_MAX_LENGTH, stdin) == NULL) {
+		userName[0] = '\0';
+	}
+	else {
+		size_t _len = strlen(userName);
+		if (_len > 0 && userName[_len - 1] == '\n') userName[_len - 1] = '\0';
+	}
 
 	// Get password
 	printf("%s@vulnerable.machine.com: ", userName);
 	fflush(stdout);
-	//gets(passwd);  
-	scanf("%s", passwd); // use scanf("%s", passwd); if gets fails with identifier not found
+	if (fgets(passwd, USER_INPUT_MAX_LENGTH, stdin) == NULL) {
+		passwd[0] = '\0';
+	}
+	else {
+		size_t _len2 = strlen(passwd);
+		if (_len2 > 0 && passwd[_len2 - 1] == '\n') passwd[_len2 - 1] = '\0';
+	}
 
 	// Check user rights (set to NORMAL_USER and not changed in code)
 	if (userRights == NORMAL_USER) {
@@ -83,10 +93,11 @@ void demoAdjacentMemoryOverflow(char* userName, char* password) {
 
 	memset(buf, 0, sizeof(buf));
 	memset(message, 1, sizeof(message));
-	strncpy(buf, userName, sizeof(buf));              // We will copy only characters which fits into buf
+	/* Copy safely and guarantee null-termination. */
+	snprintf(buf, sizeof(buf), "%s", userName);
 
-													  // Now print username to standard output - nothing sensitive, right?
-	sprintf(message, "Checking '%s' password\n", buf);
+	/* Print username to standard output safely. */
+	snprintf(message, sizeof(message), "Checking '%s' password\n", buf);
 	printf("%s", message);
 	if (strcmp(password, realPassword) == 0) {
 		printf("Correct password.\n");
