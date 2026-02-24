@@ -6,6 +6,7 @@
 #include "memory.h"
 #include <iostream>
 #include <iomanip>
+#include <limits>
 using namespace std;
 // Note: GCC and MSVC uses different memory alignment
 // Try "12345678DevilEvecosia" as a password for gcc build
@@ -117,17 +118,34 @@ typedef struct _some_structure {
 
 void demoDataTypeOverflow(int totalItemsCount, some_structure* pItem, int itemPosition) {
 	// See http://blogs.msdn.com/oldnewthing/archive/2004/01/29/64389.aspx
-	some_structure* data_copy = NULL;
-	int bytesToAllocation = totalItemsCount * sizeof(some_structure);
-	printf("Bytes to allocation: %d\n", bytesToAllocation);
-	data_copy = (some_structure*)malloc(bytesToAllocation);
-	if (itemPosition >= 0 && itemPosition < totalItemsCount) {
-		memcpy(&(data_copy[itemPosition]), pItem, sizeof(some_structure));
-	}
-	else {
-		printf("Out of bound assignment");
+	if (totalItemsCount <= 0) {
+		printf("Invalid totalItemsCount\n");
 		return;
 	}
+	if (itemPosition < 0 || itemPosition >= totalItemsCount) {
+		printf("Out of bound assignment\n");
+		return;
+	}
+
+	size_t count = (size_t)totalItemsCount;
+	size_t itemPos = (size_t)itemPosition;
+	size_t itemSize = sizeof(some_structure);
+
+	if (count > std::numeric_limits<size_t>::max() / itemSize) {
+		printf("Requested allocation too large\n");
+		return;
+	}
+
+	size_t bytesToAllocation = count * itemSize;
+	printf("Bytes to allocation: %zu\n", bytesToAllocation);
+
+	some_structure* data_copy = (some_structure*)malloc(bytesToAllocation);
+	if (data_copy == NULL) {
+		printf("Memory allocation failed\n");
+		return;
+	}
+
+	memcpy(&(data_copy[itemPos]), pItem, itemSize);
 	free(data_copy);
 }
 
